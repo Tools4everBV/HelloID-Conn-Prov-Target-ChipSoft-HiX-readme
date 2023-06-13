@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://www.tools4ever.nl/connector-logos/hix-logo.png" width="500">
-</p>
+</p> 
 
 ## Table of contents
 
