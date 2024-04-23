@@ -1,93 +1,155 @@
-# HelloID-Conn-Prov-Target-ChipSoft-HiX-readme
 
-| :information_source: Contact |
-|:---------------------------|
-| Please contact your local Tools4ever sales representative for further information and details about the implementation of this connector  |
+# HelloID-Conn-Prov-Target-ChipSoft-HiX
 
-| :information_source: Information |
-|:---------------------------|
-| This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements. |
+> [!WARNING]
+> This connector has not been tested on a ChipSoft-HiX environment in combination with HelloID. Therefore, changes will have to be made accordingly.
+
+> [!WARNING]
+> At this point, the security configuration for ChipSoft-HiX is not clear. The API connection itself has no security settings apart from an EV certificate that appears to be a server certificate only. This will need to be addressed before implementing this connector
+
+> [!IMPORTANT]
+> This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
 <p align="center">
-  <img src="https://www.tools4ever.nl/connector-logos/hix-logo.png" width="500">
-</p> 
+  <img src="https://chipsoft.nl/SiteCollectionImages/Chipsoft/svg/Logo%20ChipSoft.svg" width="600">
+</p>
 
 ## Table of contents
 
-- [HelloID-Conn-Prov-Target-ChipSoft-HiX-readme](#helloid-conn-prov-target-chipsoft-hix-readme)
+- [HelloID-Conn-Prov-Target-ChipSoft-HiX](#helloid-conn-prov-target-chipsoft-hix)
   - [Table of contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Getting started](#getting-started)
-    - [LifeCycle events](#lifecycle-events)
+    - [Provisioning PowerShell V2 connector](#provisioning-powershell-v2-connector)
+      - [Correlation configuration](#correlation-configuration)
+      - [Field mapping](#field-mapping)
     - [Connection settings](#connection-settings)
+    - [Prerequisites](#prerequisites)
     - [Remarks](#remarks)
       - [HelloID Agent](#helloid-agent)
-      - [Update user / groups](#update-user--groups)
-      - [Creation / correlation process](#creation--correlation-process)
-  - [Setup the connector](#setup-the-connector)
+      - [Security](#security)
+      - [Update always includes the full object](#update-always-includes-the-full-object)
+      - [Maximum of characters on fields `title` and `department`](#maximum-of-characters-on-fields-title-and-department)
+      - [`gebruikersnaam` and `ldap` both mapped to same value](#gebruikersnaam-and-ldap-both-mapped-to-same-value)
+      - [Session concurrency](#session-concurrency)
+      - [`ControlId`](#controlid)
   - [Getting help](#getting-help)
   - [HelloID docs](#helloid-docs)
 
 ## Introduction
 
-_HelloID-Conn-Prov-Target-ChipSoft-HiX_ is a _target_ connector. ChipSoft-HiX offers web services APIs that allow developers to access and integrate the functionality with other applications and systems.
+_HelloID-Conn-Prov-Target-ChipSoft-HiX_ is a _target_ connector. _ChipSoft-HiX_ provides a SOAP WSDL interface that allow you to programmatically interact with its data. The HelloID connector uses the methods endpoints listed in the table below.
 
-The ChipSoft-HiX API uses a WSDL / SOAP architecture. A WSDL (Web Services Description Language) is an XML-based language that is used for describing the functionality of a web service. A WSDL file defines the methods that are exposed by the web service, along with the data types that are used by those methods and the messages that are exchanged between the web service and its clients.
+| Message type                   | Description                |
+| ------------------------------ | -------------------------- |
+| /nieuwegebruiker.gegevens      | Create a new user account. |
+| /wijzigengebruiker.gegevens    | Modify a user account.     |
+| /blokkerengebruiker.gegevens   | Disable a user account.    |
+| /deblokkerengebruiker.gegevens | Enable a user account.     |
+| /aanvraag.zisgebruikers        | Retrieve a user account.   |
+
+The following lifecycle actions are available:
+
+| Action                                       | Description                                           |
+| -------------------------------------------- | ----------------------------------------------------- |
+| create.ps1                                   | PowerShell _create_ lifecycle action                  |
+| delete.ps1                                   | PowerShell _delete_ lifecycle action                  |
+| disable.ps1                                  | PowerShell _disable_ lifecycle action                 |
+| enable.ps1                                   | PowerShell _enable_ lifecycle action                  |
+| update.ps1                                   | PowerShell _update_ lifecycle action                  |
+| permissions/groups/grantPermission.ps1       | PowerShell groups _grant_ lifecycle action            |
+| permissions/groups/revokePermission.ps1      | PowerShell groups _revoke_ lifecycle action           |
+| permissions/groups/permissions.ps1           | PowerShell groups _permissions_ lifecycle action      |
+| permissions/logingroups/grantPermission.ps1  | PowerShell loginGroups _grant_ lifecycle action       |
+| permissions/logingroups/revokePermission.ps1 | PowerShell loginGroups _revoke_ lifecycle action      |
+| permissions/logingroups/permissions.ps1      | PowerShell loginGroups _permissions_ lifecycle action |
+| configuration.json                           | Default _configuration.json_                          |
+| fieldMapping.json                            | Default _fieldMapping.json_                           |
 
 ## Getting started
 
-### LifeCycle events
+### Provisioning PowerShell V2 connector
 
-The following lifecycle events are available:
+#### Correlation configuration
 
-| Event| Description |
-|---|---
-| create.ps1 | Create (or update) and correlate an Account |
-| update.ps1 | Update the Account |
-| enable.ps1 | Enable the Account |
-| disable.ps1 | Disable the Account |
-| permissions.ps1 | Collects the possible permissions (Groups and LoginGroups) |
-| grant.ps1 | Adds a member to a group or loginGroup |
-| revoke.ps1 | Removes a member from a group or loginGroup |
+The correlation configuration is used to specify which properties will be used to match an existing account within ChipSoft-HiX_ to a person in _HelloID_.
 
-> :exclamation: accounts cannot be deleted from ChipSoft-HiX.
+To properly setup the correlation:
+
+1. Open the `Correlation` tab.
+
+2. Specify the following configuration:
+
+    | Setting                   | Value                           |
+    | ------------------------- | ------------------------------- |
+    | Enable correlation        | `True`                          |
+    | Person correlation field  | `PersonContext.Person.UserName` |
+    | Account correlation field | `ldap`                          |
+
+> [!TIP]
+> _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
+
+#### Field mapping
+
+The field mapping can be imported by using the _fieldMapping.json_ file.
 
 ### Connection settings
 
 The following settings are required to connect to the API.
 
-| Setting      | Description| Mandatory   |
-| ------------ | -----------| ----------- |
-| ServerAddress | The ServerAddress and port number to the COMEZ application server | Yes |
+| Setting | Description                                                                                       | Mandatory | Example                  |
+| ------- | ------------------------------------------------------------------------------------------------- | --------- | ------------------------ |
+| BaseUrl | The URL of the ChipSoft Gomez application server. (This address must also include a port number.) | Yes       | `http://127.0.0.1:12345` |
 
+### Prerequisites
 
 ### Remarks
 
 #### HelloID Agent
 
-At this point the security configuration for ChipSoft-Hix is based on an EV certificate (Hix serverside only). If a client certificate is required, the connector can only be used in conjunction with the local HelloID provisioning agent.
+Because _ChipSoft HiX_ is an application that runs on-premises, the _HelloID_ agent is required in order to use this connector.
 
-#### Update user / groups
+#### Security
+
+At this point, the security configuration for ChipSoft-HiX is not clear. The API connection itself has no security settings apart from an EV certificate that appears to be a server certificate only. This will need to be addressed before implementing this connector.
+
+#### Update always includes the full object
 
 If a user is updated, the complete object must be send the API. The same applies to groups and loginGroups.
 
-#### Creation / correlation process
+#### Maximum of characters on fields `title` and `department`
 
-A new functionality is the possibility to update the account in the target system during the correlation process. By default, this behavior is disabled. Meaning, the account will only be created or correlated.
+- The `title` field can only contain a maximum of _5_ characters.
 
-You can change this behavior in the `create.ps1` by setting the boolean `$updatePerson` to the value of `$true`.
+- `department` field  can only contain a maximum of _6_ characters.
 
-## Setup the connector
+> [!TIP]
+> For both fields, this is being handled within the fieldMapping by using a complex mapping.
 
-Because the update call to ChipSoft-HiX is in fact a 'PUT' and the user account first needs to be retrieved from ChipSoft-HiX, the concurrent sessions in HelloID must be set to the value of `1`.
+#### `gebruikersnaam` and `ldap` both mapped to same value
+
+Currently we made the assumption that the `gebruikersnaam` and `ldap` properties will both be mapped to the same value. E.g. `$personContext.Person.UserName`.
+
+> [!TIP]
+> The `ldap` field is being used by _ChipSoft HiX_ to actually retrieve a user account. This is also the value that's being used for correlation.
+
+#### Session concurrency
+
+To ensure that the grant for groups and the grant for login groups do not interfere with each other, it's necessary to set concurrent actions to 1 for the connector. Otherwise, permissions may be overwritten or not properly assigned.
+
+#### `ControlId`
+
+All requests sent to the ChipSoft-HiX Gomez application server must include a unique identifier. Currently, this identifier is a combination of a GUID and the current timestamp. This will guarantee the `id` is always unique. This unique identifier will be verified within _ChipSoft-HiX_. If the numbers match, a response will be send back containing the same number. This number will be verified within the connector.
 
 ## Getting help
 
-> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/hc/en-us/articles/360012558020-Configure-a-custom-PowerShell-target-system) pages_
+> [!TIP]
+> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
 
-> _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com/forum/helloid-connectors/provisioning/1281-helloid-conn-prov-target-chipsoft-hix-readme)_
-
+> [!TIP]
+>  _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_.
 
 ## HelloID docs
 
 The official HelloID documentation can be found at: https://docs.helloid.com/
+
