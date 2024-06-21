@@ -7,6 +7,9 @@
 > [!WARNING]
 > At this point, the security configuration for ChipSoft-HiX is not clear. The API connection itself has no security settings apart from an EV certificate that appears to be a server certificate only. This will need to be addressed before implementing this connector
 
+> [!WARNING]
+> Current SSO state of users can't be retrieved from the API. Therefore SSO can only be set for all users or none of the users. Furthermore when setting the SSO-loginname (AzureUPN) send from HelloID to HIX and this does not correspond with the current value, the HIX API will remove the current SSO user and creates a new one. The comparison between the values will be processed in the HIX API and includes case-sensitivity (user@domain.com isn't the same as User@Domain.com). Be aware that deletion of the SSO user and the creation of the SSO can result in an error due timing-issues and can result in losing all current permissions in HIX.
+
 > [!IMPORTANT]
 > This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
