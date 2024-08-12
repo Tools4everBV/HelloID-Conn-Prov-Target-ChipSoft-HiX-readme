@@ -1,8 +1,7 @@
-
 # HelloID-Conn-Prov-Target-ChipSoft-HiX
 
 > [!WARNING]
-> This connector has been tested on a ChipSoft-HiX environment in combination with HelloID. Although it can be implemented, implementations differ per organisation. Also various fixes will be implemented by the HiX supplier in the near future. Therefore, changes will have to be made accordingly.
+> This connector has been tested on a ChipSoft-HiX environment in combination with HelloID. Although it can be implemented, implementations differ per organisation. Also various fixes will be implemented by the supplier in the near future. Therefore, changes will have to be made accordingly.
 
 > [!WARNING]
 > At this point, the security configuration for ChipSoft-HiX is not clear. The API connection itself has no security settings apart from an EV certificate that appears to be a server certificate only. This will need to be addressed before implementing this connector
@@ -18,6 +17,9 @@
 
 > [!IMPORTANT]
 > This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
+
+> [!IMPORTANT]
+> When not using a mapping for translation of HR departmentcodes or jobtitlecodes to the corresponding HiX codes, the connector will use the existing HR codes. These codes should than exist in HiX.
 
 <p align="center">
   <img src="https://chipsoft.nl/SiteCollectionImages/Chipsoft/svg/Logo%20ChipSoft.svg" width="600">
@@ -59,21 +61,27 @@ _HelloID-Conn-Prov-Target-ChipSoft-HiX_ is a _target_ connector. _ChipSoft-HiX_ 
 
 The following lifecycle actions are available:
 
-| Action                                       | Description                                           |
-| -------------------------------------------- | ----------------------------------------------------- |
-| create.ps1                                   | PowerShell _create_ lifecycle action                  |
-| delete.ps1                                   | PowerShell _delete_ lifecycle action                  |
-| disable.ps1                                  | PowerShell _disable_ lifecycle action                 |
-| enable.ps1                                   | PowerShell _enable_ lifecycle action                  |
-| update.ps1                                   | PowerShell _update_ lifecycle action                  |
-| permissions/groups/grantPermission.ps1       | PowerShell groups _grant_ lifecycle action            |
-| permissions/groups/revokePermission.ps1      | PowerShell groups _revoke_ lifecycle action           |
-| permissions/groups/permissions.ps1           | PowerShell groups _permissions_ lifecycle action      |
-| permissions/logingroups/grantPermission.ps1  | PowerShell loginGroups _grant_ lifecycle action       |
-| permissions/logingroups/revokePermission.ps1 | PowerShell loginGroups _revoke_ lifecycle action      |
-| permissions/logingroups/permissions.ps1      | PowerShell loginGroups _permissions_ lifecycle action |
-| configuration.json                           | Default _configuration.json_                          |
-| fieldMapping.json                            | Default _fieldMapping.json_                           |
+| Action                                       | Description                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| create.ps1                                   | PowerShell _create_ lifecycle action                              |
+| delete.ps1                                   | PowerShell _delete_ lifecycle action                              |
+| disable.ps1                                  | PowerShell _disable_ lifecycle action                             |
+| enable.ps1                                   | PowerShell _enable_ lifecycle action                              |
+| update.ps1                                   | PowerShell _update_ lifecycle action                              |
+| permissions/groups/grantPermission.ps1       | PowerShell groups _grant_ lifecycle action                        |
+| permissions/groups/revokePermission.ps1      | PowerShell groups _revoke_ lifecycle action                       |
+| permissions/groups/permissions.ps1           | PowerShell groups _permissions_ lifecycle action                  |
+| permissions/groups/subpermissions.ps1        | PowerShell groups _subpermissions_ lifecycle action               |
+| permissions/logingroups/grantPermission.ps1  | PowerShell loginGroups _grant_ lifecycle action                   |
+| permissions/logingroups/revokePermission.ps1 | PowerShell loginGroups _revoke_ lifecycle action                  |
+| permissions/logingroups/permissions.ps1      | PowerShell loginGroups _permissions_ lifecycle action             |
+| permissions/logingroups/subpermissions.ps1   | PowerShell loginGroups _subpermissions_ lifecycle action          |
+| configuration.json                           | Default _configuration.json_                                      |
+| fieldMapping.json                            | Default _fieldMapping.json_                                       |
+| assets/hix_department_codes.csv              | Example of HR department - HiX department translation mapping     |
+| assets/hix_jobtitle_codes.csv                | Example of HR jobtitle - HiX title translation mapping            |
+| assets/hix_logingroups.csv                   | Example of mapped logingroups based on HR jobtitle and department |
+| assets/hix_groups_codes.csv                  | Example of mapped groups based on HR jobtitle and department      |
 
 ## Getting started
 
@@ -81,7 +89,7 @@ The following lifecycle actions are available:
 
 #### Correlation configuration
 
-The correlation configuration is used to specify which properties will be used to match an existing account within ChipSoft-HiX_ to a person in _HelloID_.
+The correlation configuration is used to specify which properties will be used to match an existing account within ChipSoft-HiX* to a person in \_HelloID*.
 
 To properly setup the correlation:
 
@@ -89,14 +97,13 @@ To properly setup the correlation:
 
 2. Specify the following configuration:
 
-    | Setting                   | Value                           |
-    | ------------------------- | ------------------------------- |
-    | Enable correlation        | `True`                          |
-    | Person correlation field  | `PersonContext.Person.UserName` |
-    | Account correlation field | `ldap`                          |
+   | Setting                   | Value                           |
+   | ------------------------- | ------------------------------- |
+   | Enable correlation        | `True`                          |
+   | Person correlation field  | `PersonContext.Person.UserName` |
+   | Account correlation field | `ldap`                          |
 
-> [!TIP]
-> _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
+> [!TIP] > _For more information on correlation, please refer to our correlation [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems/correlation.html) pages_.
 
 #### Field mapping
 
@@ -130,7 +137,7 @@ If a user is updated, the complete object must be send the API. The same applies
 
 - The `title` field can only contain a maximum of _5_ characters.
 
-- `department` field  can only contain a maximum of _6_ characters.
+- `department` field can only contain a maximum of _6_ characters.
 
 > [!TIP]
 > For both fields, this is being handled within the fieldMapping by using a complex mapping.
@@ -144,7 +151,7 @@ Currently we made the assumption that the `gebruikersnaam` and `ldap` properties
 
 #### Session concurrency
 
-To ensure that the grant for groups and the grant for login groups do not interfere with each other, it's necessary to set concurrent actions to 1 for the connector. Otherwise, permissions may be overwritten or not properly assigned.
+To ensure that the grant for groups and the grant for login groups do not interfere with each other, it's necessary to set concurrent actions to 1 for the connector. Otherwise, permissions may be overwritten or not properly assigned. This will also prevent actions in HIX will be executed while previous actions are not finished yet.
 
 #### `ControlId`
 
@@ -152,13 +159,10 @@ All requests sent to the ChipSoft-HiX Gomez application server must include a un
 
 ## Getting help
 
-> [!TIP]
-> _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
+> [!TIP] > _For more information on how to configure a HelloID PowerShell connector, please refer to our [documentation](https://docs.helloid.com/en/provisioning/target-systems/powershell-v2-target-systems.html) pages_.
 
-> [!TIP]
->  _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_.
+> [!TIP] > _If you need help, feel free to ask questions on our [forum](https://forum.helloid.com)_.
 
 ## HelloID docs
 
 The official HelloID documentation can be found at: https://docs.helloid.com/
-
