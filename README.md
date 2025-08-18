@@ -19,10 +19,13 @@
 > When using the HIX mobile module a AzureUPN needs to be provided. This creates an entry for using the mobile application of HIX. When an entry already exists and differs from the provided value, the old entry will be deleted and a new entry will be created. Again due timing-issues this can result in losing permissions.
 
 > [!IMPORTANT]
-> This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
+> When not using a mapping for translation of HR departmentcodes or jobtitlecodes to the corresponding HiX codes, the connector will use the existing HR codes. These codes should than exist in HiX.
 
 > [!IMPORTANT]
-> When not using a mapping for translation of HR departmentcodes or jobtitlecodes to the corresponding HiX codes, the connector will use the existing HR codes. These codes should than exist in HiX.
+> Although different variants of setting permissions are possible it's advised to set the permissions in one action. When both groups and logingroups are used and are set within separate scripts, it could be possible the actions in HIX fail when one of the actions is not finished yet and the other action is started. When this happens in the HIX database, one of the grouptypes could end in an empty set. 
+
+> [!IMPORTANT]
+> This repository contains the connector and configuration code only. The implementer is responsible to acquire the connection details such as username, password, certificate, etc. You might even need to sign a contract or agreement with the supplier before implementing this connector. Please contact the client's application manager to coordinate the connector requirements.
 
 <p align="center">
   <img src="https://chipsoft.nl/SiteCollectionImages/Chipsoft/svg/Logo%20ChipSoft.svg" width="600">
